@@ -6,10 +6,12 @@ export function Button({
   title,
   onPress,
   disabled = false,
+  tone = 'success',
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
+  tone?: 'success' | 'error';
 }) {
   return (
     <Pressable
@@ -19,6 +21,7 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
+        tone === 'error' && styles.incorrectButton,
         disabled && styles.disabled,
         pressed && styles.pressed,
       ]}
@@ -33,33 +36,52 @@ export function Options({
   selected,
   onSelect,
   disabled = false,
+  correctAnswer,
 }: {
   options: string[];
   selected: number | null;
   onSelect: (index: number) => void;
   disabled?: boolean;
+  correctAnswer?: number;
 }) {
   return (
     <View style={styles.stack} accessibilityRole="radiogroup">
-      {options.map((option, index) => (
-        <Pressable
-          key={option}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: selected === index, disabled }}
-          disabled={disabled}
-          onPress={() => onSelect(index)}
-          style={({ pressed }) => [
-            styles.option,
-            selected === index && styles.selected,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.letter}>
-            {selected === index ? '✓' : String.fromCharCode(65 + index)}
-          </Text>
-          <Text style={styles.optionText}>{option}</Text>
-        </Pressable>
-      ))}
+      {options.map((option, index) => {
+        const right = correctAnswer === index;
+        const wrong = correctAnswer !== undefined && selected === index && !right;
+        return (
+          <Pressable
+            key={option}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: selected === index, disabled }}
+            accessibilityLabel={
+              right ? `Correct answer: ${option}` : wrong ? `Incorrect answer: ${option}` : option
+            }
+            disabled={disabled}
+            onPress={() => onSelect(index)}
+            style={({ pressed }) => [
+              styles.option,
+              selected === index && styles.selected,
+              right && styles.selected,
+              wrong && styles.incorrectOption,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={[styles.letter, wrong && styles.incorrectText]}>
+              {wrong ? '✕' : right || selected === index ? '✓' : String.fromCharCode(65 + index)}
+            </Text>
+            <Text
+              style={[
+                styles.optionText,
+                right && styles.correctText,
+                wrong && styles.incorrectText,
+              ]}
+            >
+              {option}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { popIn, reveal } from '../components/motion';
 import { Button, Footer, Options, ProgressBar } from '../components/UI';
 import { lessonCheck } from '../content';
 import { styles } from '../styles';
@@ -20,7 +23,11 @@ export function Lesson({ onComplete, busy }: { onComplete: () => void; busy: boo
         >
           {Array.from({ length: 10 }, (_, index) => (
             <View key={index} style={[styles.share, owned && index === 0 && styles.ownedShare]}>
-              {owned && index === 0 && <Text style={styles.shareText}>✓</Text>}
+              {owned && index === 0 && (
+                <Animated.Text entering={popIn} style={styles.shareText}>
+                  ✓
+                </Animated.Text>
+              )}
             </View>
           ))}
         </View>
@@ -36,13 +43,13 @@ export function Lesson({ onComplete, busy }: { onComplete: () => void; busy: boo
             You own one share, so you own 10% of this imaginary bakery. A share of stock works the
             same way: it represents ownership in a company.
           </Text>
-          <View style={styles.softCard}>
+          <Animated.View entering={reveal} style={styles.softCard}>
             <Text style={styles.heading}>Ownership comes with uncertainty.</Text>
             <Text style={styles.body}>
               A share’s price can rise or fall. Owning part of a company does not guarantee a
               profit, and it is not a loan the company must repay.
             </Text>
-          </View>
+          </Animated.View>
         </>
       ) : (
         <Text style={styles.body}>
@@ -62,14 +69,26 @@ export function Lesson({ onComplete, busy }: { onComplete: () => void; busy: boo
 
 export function LessonCheck({
   onComplete,
+  onFeedbackShown,
   busy,
 }: {
   onComplete: (answer: number) => void;
+  onFeedbackShown: () => void;
   busy: boolean;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const correct = selected === lessonCheck.answer;
+
+  function checkAnswer() {
+    if (selected === null || submitted || busy) return;
+    setSubmitted(true);
+    // Haptics are optional; unsupported devices must still show the feedback.
+    void Haptics.notificationAsync(
+      correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error,
+    ).catch(() => {});
+  }
+
   return (
     <>
       <Text style={styles.eyebrow}>Lesson 01 / Check your understanding</Text>
@@ -81,25 +100,43 @@ export function LessonCheck({
         selected={selected}
         onSelect={setSelected}
         disabled={submitted || busy}
+        correctAnswer={submitted ? lessonCheck.answer : undefined}
       />
-      {submitted && (
-        <View style={styles.softCard} accessibilityLiveRegion="polite">
-          <Text style={styles.heading}>
-            {correct ? 'That’s it! 🌱' : 'A little seed of knowledge'}
-          </Text>
-          <Text style={styles.body}>
-            A stock is a small piece of a company. It represents ownership, not a loan or guaranteed
-            profit. Its value can change.
-          </Text>
-        </View>
-      )}
       <Footer>
+        {submitted && (
+          <Animated.View
+            entering={reveal}
+            style={[styles.softCard, !correct && styles.incorrectCard]}
+            accessibilityLiveRegion="polite"
+            onLayout={onFeedbackShown}
+          >
+            <Text style={[styles.heading, correct ? styles.correctText : styles.incorrectText]}>
+              {correct ? '✓ Correct! Nicely done.' : '✕ Not quite. Let’s learn from it!'}
+            </Text>
+            {!correct && (
+              <Text style={[styles.optionText, styles.incorrectText]}>
+                Correct answer: {lessonCheck.options[lessonCheck.answer]}.
+              </Text>
+            )}
+            <Text style={styles.body}>
+              A stock is a small piece of a company. It represents ownership, not a loan or
+              guaranteed profit. Its value can change.
+            </Text>
+          </Animated.View>
+        )}
         <Button
-          title={submitted ? 'Finish lesson · Earn $1,000 virtual' : 'Check my answer'}
+          title={
+            submitted
+              ? correct
+                ? 'Continue · Earn $1,000 virtual'
+                : 'Got it · Finish lesson'
+              : 'Check my answer'
+          }
+          tone={submitted && !correct ? 'error' : 'success'}
           disabled={selected === null || busy}
           onPress={() => {
             if (submitted && selected !== null) onComplete(selected);
-            else setSubmitted(true);
+            else checkAnswer();
           }}
         />
       </Footer>

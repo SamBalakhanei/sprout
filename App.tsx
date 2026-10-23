@@ -1,8 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated from 'react-native-reanimated';
+import {
+  GestureDetector,
+  GestureHandlerRootView,
+  usePanGesture,
+} from 'react-native-gesture-handler';
+import { celebrate, noticeEnter, noticeExit, pageEnter } from './components/motion';
 import { Button, Footer } from './components/UI';
 import { lessonReward, lessonXP, placementQuestions, reflectionQuestions } from './content';
 import { initialProgress, localDate, Progress, score, streak } from './progress';
@@ -13,20 +29,41 @@ import { progressStorage } from './storage';
 import { colors, styles } from './styles';
 
 export default function App() {
+  const { height } = useWindowDimensions();
   return (
-    <SafeAreaProvider>
-      <Sprout />
-    </SafeAreaProvider>
+    <GestureHandlerRootView
+      style={
+        Platform.OS === 'web'
+          ? { height, width: '100%', backgroundColor: colors.cream }
+          : styles.root
+      }
+    >
+      <SafeAreaProvider>
+        <Sprout />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 function Sprout() {
+  const insets = useSafeAreaInsets();
   const [progress, setProgress] = useState<Progress>(initialProgress);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showLessonNotice, setShowLessonNotice] = useState(false);
   const saving = useRef(false);
   const scroll = useRef<ScrollViewInstance>(null);
+  const dismissNotice = usePanGesture({
+    activeOffsetY: -8,
+    failOffsetX: [-30, 30],
+    runOnJS: true,
+    onDeactivate: (event) => {
+      if (!event.canceled && (event.translationY < -24 || event.velocityY < -300)) {
+        setShowLessonNotice(false);
+      }
+    },
+  });
 
   async function load() {
     setLoading(true);
@@ -44,8 +81,15 @@ function Sprout() {
     void load();
   }, []);
   useEffect(() => {
+    setShowLessonNotice(false);
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [progress.stage]);
+
+  useEffect(() => {
+    if (!showLessonNotice) return;
+    const timer = setTimeout(() => setShowLessonNotice(false), 4500);
+    return () => clearTimeout(timer);
+  }, [showLessonNotice]);
 
   async function update(changes: Partial<Progress>) {
     if (saving.current) return;
@@ -78,7 +122,7 @@ function Sprout() {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset prototype',
+          text: 'Reset progress',
           style: 'destructive',
           onPress: () => {
             void update(initialProgress);
@@ -99,14 +143,14 @@ function Sprout() {
     return (
       <SafeAreaView style={styles.centered}>
         <Text style={styles.heading}>We couldn’t open your saved progress.</Text>
-        <Text style={styles.body}>Try again, or reset this prototype to start fresh.</Text>
+        <Text style={styles.body}>Try again, or reset your progress to start fresh.</Text>
         <Button
           title="Try again"
           onPress={() => {
             void load();
           }}
         />
-        <Button title="Reset prototype" onPress={reset} disabled={busy} />
+        <Button title="Reset progress" onPress={reset} disabled={busy} />
       </SafeAreaView>
     );
 
@@ -182,8 +226,7 @@ function Sprout() {
                 Your starting confidence: {progress.before?.confidence}/5
               </Text>
               <Text style={styles.small}>
-                This prototype has one lesson. Your quiz changes this recommendation, and everyone
-                tries the same foundations lesson.
+                Start with stock ownership, then put what you learn into practice.
               </Text>
             </View>
             <View style={styles.card}>
@@ -205,6 +248,7 @@ function Sprout() {
         return (
           <LessonCheck
             busy={busy}
+            onFeedbackShown={() => scroll.current?.scrollToEnd({ animated: false })}
             onComplete={(checkAnswer) => {
               void update({ checkAnswer, completedOn: localDate(), stage: 'reward' });
             }}
@@ -215,11 +259,13 @@ function Sprout() {
           <>
             <Text style={styles.badge}>✓ Lesson complete</Text>
             <View style={styles.hero}>
-              <Text style={styles.plant}>🌻</Text>
+              <Animated.View entering={celebrate}>
+                <Text style={styles.plant}>🌻</Text>
+              </Animated.View>
             </View>
-            <Text style={styles.title}>Your first lesson. Your first seed.</Text>
+            <Text style={styles.title}>You learned it. Now try it.</Text>
             <Text style={styles.body}>
-              You know what a stock is. Now put that knowledge to work in practice mode.
+              A share means ownership. Use your reward to buy one share—and explain your reason.
             </Text>
             <View style={styles.greenCard}>
               <Text style={[styles.eyebrow, styles.white]}>Play money earned</Text>
@@ -233,11 +279,7 @@ function Sprout() {
               <Text style={styles.badge}>🔥 {dayStreak}-day streak</Text>
             </View>
             <Footer>
-              <Button
-                title="Try my first practice trade"
-                onPress={() => advance('trade')}
-                disabled={busy}
-              />
+              <Button title="Next: buy a share" onPress={() => advance('trade')} disabled={busy} />
             </Footer>
           </>
         );
@@ -255,6 +297,7 @@ function Sprout() {
           <TradeResult
             busy={busy}
             reason={progress.tradeReason!}
+            onOutcomeShown={() => scroll.current?.scrollTo({ y: 0, animated: false })}
             onComplete={() => advance(progress.after ? 'done' : 'reflection')}
           />
         );
@@ -290,7 +333,7 @@ function Sprout() {
                 after
               </Text>
               <Text style={styles.small}>
-                Two short quizzes offer a learning signal, not a formal assessment.
+                Every new idea is a step toward feeling more confident.
               </Text>
             </View>
             {afterScore < 2 && (
@@ -314,11 +357,11 @@ function Sprout() {
             </Text>
             <Footer>
               <Text style={styles.small}>
-                You’ve reached the end of this prototype. Use Reset to run a new learning session.
+                Your first chapter is complete. Take a moment to see how far you’ve grown.
               </Text>
               <Button
-                title="Review my practice trade"
-                onPress={() => advance('result')}
+                title="Continue to lesson 2"
+                onPress={() => setShowLessonNotice(true)}
                 disabled={busy}
               />
             </Footer>
@@ -337,13 +380,42 @@ function Sprout() {
             <Text style={styles.link}>Reset prototype</Text>
           </Pressable>
         </View>
-        {renderScreen()}
+        <Animated.View key={progress.stage} entering={pageEnter} style={styles.screen}>
+          {renderScreen()}
+        </Animated.View>
         {busy && (
           <Text accessibilityLiveRegion="polite" style={styles.small}>
             Saving your progress…
           </Text>
         )}
       </ScrollView>
+      <View pointerEvents="box-none" style={[styles.noticeLayer, { top: insets.top + 8 }]}>
+        <GestureDetector gesture={dismissNotice} touchAction="none">
+          <View collapsable={false} style={styles.noticeSlot}>
+            {showLessonNotice && (
+              <Animated.View
+                entering={noticeEnter}
+                exiting={noticeExit}
+                style={styles.notice}
+                accessibilityLiveRegion="polite"
+                accessible
+                accessibilityRole="alert"
+                accessibilityHint="Swipe up to dismiss"
+                accessibilityActions={[{ name: 'dismiss', label: 'Dismiss notification' }]}
+                onAccessibilityAction={() => setShowLessonNotice(false)}
+                onAccessibilityEscape={() => setShowLessonNotice(false)}
+              >
+                <Text style={styles.noticeIcon}>🌱</Text>
+                <View style={styles.noticeContent}>
+                  <Text style={styles.eyebrow}>Sprout · Now</Text>
+                  <Text style={styles.noticeTitle}>More learning is on the way</Text>
+                  <Text style={styles.small}>Lesson 2 is not implemented yet. Stay tuned!</Text>
+                </View>
+              </Animated.View>
+            )}
+          </View>
+        </GestureDetector>
+      </View>
     </SafeAreaView>
   );
 }
