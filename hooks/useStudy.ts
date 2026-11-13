@@ -100,7 +100,12 @@ export function useStudy() {
   const event = useCallback(
     (type: string, payload: Record<string, unknown> = {}) => {
       if (!session) return;
-      return queueEvent(session.id, type, { ...payload, appVersion: contentVersion }).catch(() => {
+      return queueEvent(session.id, type, {
+        ...payload,
+        appVersion: contentVersion,
+        experiment: 'ownership-price-direction-v1',
+        variant: session.variant,
+      }).catch(() => {
         setSyncMessage(
           'Study events could not be saved on this device. Please check available storage.',
         );

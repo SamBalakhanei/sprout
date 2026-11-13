@@ -2,7 +2,7 @@
 
 These are implementation checks, not participant-study findings.
 
-- Expo TypeScript validation and 16 unit/content tests cover baseline breadth and difficulty order, exposure and fee arithmetic, answer integrity, explanations, the fixed loss scenario, sector eligibility, saved drafts, server-completion recovery, first attempts, lesson checkpoints, matched score separation, calendar streaks, and CSV escaping.
+- Expo TypeScript validation and 16 unit/content tests cover baseline breadth and difficulty order, exposure and fee arithmetic, answer integrity, explanations, both equal-sized ownership experiment outcomes, sector eligibility, saved drafts, server-completion recovery, first attempts, lesson checkpoints, matched score separation, calendar streaks, and CSV escaping.
 - The hosted Supabase migration was applied through its browser SQL editor. The rollback-only SQL checks completed without errors, including once-only rewards, malformed result rejection, duplicate orders, insufficient balance, and user isolation.
 - The opt-in hosted integration check successfully created an anonymous session, stored an event, retrieved real quotes for AAPL/MSFT/KO/JPM/WMT, bought and sold a virtual share, retried an order without duplicating it, rejected insufficient funds, and verified a second anonymous account could not read the first account's session.
 - Yahoo quote requests were blocked from one development egress but succeeded from the deployed Edge Function. Nasdaq fallback returned valid prices/timestamps during a separate development check. Source timestamps and possible delay are shown in the app.

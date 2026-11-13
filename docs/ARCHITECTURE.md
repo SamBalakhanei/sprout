@@ -2,7 +2,7 @@
 
 ## Two separate kinds of trading
 
-The ownership lesson uses a fixed $225 → $210 example to teach uncertainty. The earlier gain/loss comparison is disabled; historical server-assigned variants remain stored but are unused by the lesson. Guided purchases independently use market quotes and record virtual transactions. `content.ts` does not determine the server's execution price.
+The ownership lesson uses a $225 → $240 or $210 example to teach uncertainty. The server assigns each study session a gain/loss variant with equal probability; the lesson reads that persisted assignment without rerandomizing. The outcome card logs exposure, and all new events include the experiment ID and variant. Guided purchases independently use market quotes and record virtual transactions. `content.ts` does not determine the server's execution price.
 
 ```mermaid
 flowchart LR
@@ -51,7 +51,7 @@ Quote-source time and fetch time are distinct. A five-minute cache is not a clai
 
 ## Data collection
 
-Sessions hold baseline/progress/results and the historical assigned variant. Events hold question IDs, selected answers, phase, timing, navigation, confidence, and trade intent. Trades separately hold simulated fills. Events are queued before upload, and unique IDs make duplicate uploads safe. Client timing is approximate. Matched two-question knowledge summaries do not mix confidence into the score. Analyze `sprint4.v4` content and events separately from v2/v3.
+Sessions hold baseline/progress/results and the assigned variant. Events hold question IDs, selected answers, phase, timing, navigation, confidence, and trade intent. Trades separately hold simulated fills. Events are queued before upload, and unique IDs make duplicate uploads safe. Client timing is approximate. Matched two-question knowledge summaries do not mix confidence into the score. Analyze `sprint4.v5` content and events separately from earlier versions; only new sessions with recorded exposure are eligible for the price-direction experiment.
 
 The in-app CSV contains the current anonymous account's sessions. An administrator can use `supabase/export.sql` for team-wide data without granting learners broader access. Integration-test sessions are excluded by an explicit event marker. No study conclusions are inferred from integration tests.
 
@@ -59,7 +59,7 @@ The in-app CSV contains the current anonymous account's sessions. An administrat
 
 1. Show baseline neutrality and the sequential lesson path. Onboarding offers “I don’t know yet”; lesson questions do not.
 2. Tap bakery shares or switch diversification baskets; submit one incorrect answer and inspect explicit feedback.
-3. Show the fixed $225 → $210 lesson example.
+3. Show the assigned $225 → $240 or $210 lesson example and record exposure.
 4. Complete the lesson; inspect its first-attempt result and once-only reward.
 5. Open guided practice, inspect quote/source/time, submit reasoning with Buy, and inspect the persisted purchase.
 6. Exit and reload a partial lesson to demonstrate resume; inspect the read-only portfolio from Home. Show raw CSV fields, not invented participant findings.

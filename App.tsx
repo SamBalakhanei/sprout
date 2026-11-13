@@ -227,6 +227,7 @@ function Sprout() {
       case 'learn':
         return (
           <LearningScreen
+            variant={session!.variant}
             onFeedbackShown={showFeedback}
             onStepChange={() => scroll.current?.scrollTo({ y: 0, animated: false })}
             key={`${session!.id}-${progress.activeLesson}`}
