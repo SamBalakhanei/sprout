@@ -107,3 +107,11 @@ The same three Terra agents worked in parallel with direct edits and no Python.
 2. The portfolio agent moved Back left in onboarding and portfolio, replaced Back text with arrows, removed the portfolio's duplicate eyebrow, and ran TypeScript validation.
 3. The curriculum agent moved the lesson Back arrow left, centered progress, retained Exit on the right, formatted its file, and ran TypeScript validation.
 4. The primary agent consolidated the arrows into one shared 44-point Back control, added separate stock/sector fields to attempt events, and trimmed the remaining portfolio labels. It verified a rejected same-sector choice followed by a successful different-sector purchase, marked the synthetic session for exclusion, saved screenshots, and ran the checks recorded in `VALIDATION.md`.
+
+# Onboarding confidence-order experiment
+
+1. Replaced the lesson price-direction experiment with a session-stable onboarding assignment: A requests confidence first; B requests it after the identical ten-question quiz.
+2. Added a small onboarding module for schedule construction, group mapping, and distinct-answer scoring. The existing server random bit is reused without rewriting historical records or requiring a migration.
+3. Added quiz-run IDs, step-order events, selection changes, unknown flags, first/final summary scores and confidence, and raw unknown-selection counts. Events carry explicit experiment/group/timing/version metadata. Extended the administrative export queries.
+4. Restored the fixed $225 → $210 ownership example and removed the retired outcome instrumentation.
+5. Updated the notebook, study guide, architecture notes, and validation record. Verified both completed flows and answer revisions in an isolated browser fixture without database writes; TypeScript, 18 tests, and the web build passed.

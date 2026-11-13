@@ -1,0 +1,294 @@
+[
+  {
+    "file": "01-welcome.png",
+    "title": "Welcome"
+  },
+  {
+    "file": "02-onboarding-confidence-ownership.png",
+    "title": "Onboarding · ownership confidence"
+  },
+  {
+    "file": "03-onboarding-confidence-diversification.png",
+    "title": "Onboarding · diversification confidence"
+  },
+  {
+    "file": "04-onboarding-question-1.png",
+    "title": "Onboarding · question 1"
+  },
+  {
+    "file": "05-onboarding-question-2.png",
+    "title": "Onboarding · question 2"
+  },
+  {
+    "file": "06-onboarding-question-3.png",
+    "title": "Onboarding · question 3"
+  },
+  {
+    "file": "07-onboarding-question-4.png",
+    "title": "Onboarding · question 4"
+  },
+  {
+    "file": "08-onboarding-question-5.png",
+    "title": "Onboarding · question 5"
+  },
+  {
+    "file": "09-onboarding-question-6.png",
+    "title": "Onboarding · question 6"
+  },
+  {
+    "file": "10-onboarding-question-7.png",
+    "title": "Onboarding · question 7"
+  },
+  {
+    "file": "11-onboarding-question-8.png",
+    "title": "Onboarding · question 8"
+  },
+  {
+    "file": "12-onboarding-question-9.png",
+    "title": "Onboarding · question 9"
+  },
+  {
+    "file": "13-onboarding-question-10.png",
+    "title": "Onboarding · question 10"
+  },
+  {
+    "file": "14-home-locked.png",
+    "title": "Home · Lesson 2 locked"
+  },
+  {
+    "file": "15-portfolio-empty.png",
+    "title": "Portfolio · before practice"
+  },
+  {
+    "file": "14-home-locked-continued.png",
+    "title": "Home · Lesson 2 locked · continued"
+  },
+  {
+    "file": "16-lesson1-introduction.png",
+    "title": "Lesson 1 · ownership and vocabulary"
+  },
+  {
+    "file": "16-lesson1-introduction-continued.png",
+    "title": "Lesson 1 · ownership and vocabulary · continued"
+  },
+  {
+    "file": "17-lesson1-question-1.png",
+    "title": "Lesson 1 · question 1"
+  },
+  {
+    "file": "18-lesson1-feedback-1.png",
+    "title": "Lesson 1 · feedback 1"
+  },
+  {
+    "file": "17-lesson1-question-2.png",
+    "title": "Lesson 1 · question 2"
+  },
+  {
+    "file": "18-lesson1-feedback-2.png",
+    "title": "Lesson 1 · feedback 2"
+  },
+  {
+    "file": "17-lesson1-question-3.png",
+    "title": "Lesson 1 · question 3"
+  },
+  {
+    "file": "18-lesson1-feedback-3.png",
+    "title": "Lesson 1 · feedback 3"
+  },
+  {
+    "file": "17-lesson1-question-4.png",
+    "title": "Lesson 1 · question 4"
+  },
+  {
+    "file": "18-lesson1-feedback-4.png",
+    "title": "Lesson 1 · feedback 4"
+  },
+  {
+    "file": "18-lesson1-feedback-4-part2.png",
+    "title": "Lesson 1 · feedback 4 · continued 2"
+  },
+  {
+    "file": "17-lesson1-question-5.png",
+    "title": "Lesson 1 · question 5"
+  },
+  {
+    "file": "18-lesson1-feedback-5.png",
+    "title": "Lesson 1 · feedback 5"
+  },
+  {
+    "file": "17-lesson1-question-6.png",
+    "title": "Lesson 1 · question 6"
+  },
+  {
+    "file": "18-lesson1-feedback-6.png",
+    "title": "Lesson 1 · feedback 6"
+  },
+  {
+    "file": "17-lesson1-question-7.png",
+    "title": "Lesson 1 · question 7"
+  },
+  {
+    "file": "18-lesson1-feedback-7.png",
+    "title": "Lesson 1 · feedback 7"
+  },
+  {
+    "file": "19-lesson1-confidence.png",
+    "title": "Lesson 1 · confidence"
+  },
+  {
+    "file": "20-lesson1-complete.png",
+    "title": "Lesson 1 · completed"
+  },
+  {
+    "file": "21-ownership-trade.png",
+    "title": "Ownership checkpoint · market and order"
+  },
+  {
+    "file": "21-ownership-trade-part2.png",
+    "title": "Ownership checkpoint · market and order · continued 2"
+  },
+  {
+    "file": "21-ownership-trade-part3.png",
+    "title": "Ownership checkpoint · market and order · continued 3"
+  },
+  {
+    "file": "22-ownership-trade-feedback.png",
+    "title": "Ownership checkpoint · incorrect reasoning"
+  },
+  {
+    "file": "22-ownership-trade-feedback-part2.png",
+    "title": "Ownership checkpoint · incorrect reasoning · continued 2"
+  },
+  {
+    "file": "22-ownership-trade-feedback-part3.png",
+    "title": "Ownership checkpoint · incorrect reasoning · continued 3"
+  },
+  {
+    "file": "23-ownership-order-filled.png",
+    "title": "Ownership checkpoint · order filled"
+  },
+  {
+    "file": "24-lesson2-introduction.png",
+    "title": "Lesson 2 · one-company basket"
+  },
+  {
+    "file": "24-lesson2-three-industries.png",
+    "title": "Lesson 2 · diversified basket"
+  },
+  {
+    "file": "24-lesson2-three-industries-part2.png",
+    "title": "Lesson 2 · diversified basket · continued 2"
+  },
+  {
+    "file": "25-lesson2-question-1.png",
+    "title": "Lesson 2 · question 1"
+  },
+  {
+    "file": "26-lesson2-feedback-1.png",
+    "title": "Lesson 2 · feedback 1"
+  },
+  {
+    "file": "25-lesson2-question-2.png",
+    "title": "Lesson 2 · question 2"
+  },
+  {
+    "file": "26-lesson2-feedback-2.png",
+    "title": "Lesson 2 · feedback 2"
+  },
+  {
+    "file": "25-lesson2-question-3.png",
+    "title": "Lesson 2 · question 3"
+  },
+  {
+    "file": "26-lesson2-feedback-3.png",
+    "title": "Lesson 2 · feedback 3"
+  },
+  {
+    "file": "25-lesson2-question-4.png",
+    "title": "Lesson 2 · question 4"
+  },
+  {
+    "file": "26-lesson2-feedback-4.png",
+    "title": "Lesson 2 · feedback 4"
+  },
+  {
+    "file": "26-lesson2-feedback-4-part2.png",
+    "title": "Lesson 2 · feedback 4 · continued 2"
+  },
+  {
+    "file": "25-lesson2-question-5.png",
+    "title": "Lesson 2 · question 5"
+  },
+  {
+    "file": "26-lesson2-feedback-5.png",
+    "title": "Lesson 2 · feedback 5"
+  },
+  {
+    "file": "25-lesson2-question-6.png",
+    "title": "Lesson 2 · question 6"
+  },
+  {
+    "file": "26-lesson2-feedback-6.png",
+    "title": "Lesson 2 · feedback 6"
+  },
+  {
+    "file": "25-lesson2-question-7.png",
+    "title": "Lesson 2 · question 7"
+  },
+  {
+    "file": "26-lesson2-feedback-7.png",
+    "title": "Lesson 2 · feedback 7"
+  },
+  {
+    "file": "27-lesson2-confidence.png",
+    "title": "Lesson 2 · confidence"
+  },
+  {
+    "file": "28-lesson2-complete.png",
+    "title": "Lesson 2 · completed"
+  },
+  {
+    "file": "29-diversification-trade.png",
+    "title": "Diversification checkpoint · market and order"
+  },
+  {
+    "file": "29-diversification-trade-part2.png",
+    "title": "Diversification checkpoint · market and order · continued 2"
+  },
+  {
+    "file": "29-diversification-trade-part3.png",
+    "title": "Diversification checkpoint · market and order · continued 3"
+  },
+  {
+    "file": "30-diversification-sector-feedback.png",
+    "title": "Diversification checkpoint · sector feedback"
+  },
+  {
+    "file": "30-diversification-sector-feedback-part2.png",
+    "title": "Diversification checkpoint · sector feedback · continued 2"
+  },
+  {
+    "file": "30-diversification-sector-feedback-part3.png",
+    "title": "Diversification checkpoint · sector feedback · continued 3"
+  },
+  {
+    "file": "31-diversification-order-filled.png",
+    "title": "Diversification checkpoint · order filled"
+  },
+  {
+    "file": "32-portfolio-holdings.png",
+    "title": "Portfolio · holdings and activity"
+  },
+  {
+    "file": "32-portfolio-holdings-part2.png",
+    "title": "Portfolio · holdings and activity · continued 2"
+  },
+  {
+    "file": "33-home-complete.png",
+    "title": "Home · completed lessons and progress"
+  },
+  {
+    "file": "33-home-complete-part2.png",
+    "title": "Home · completed lessons and progress · continued 2"
+  }
+]

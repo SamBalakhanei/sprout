@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import {
   lessons,
   onboardingQuestions,
-  ownershipOutcome,
   ownershipScenario,
   recommendedLesson,
   scoreAssessment,
@@ -76,15 +75,9 @@ test('lesson measurements are distinct, valid, and cover matching pre-assessment
   }
 });
 
-test('ownership experiment changes only the direction of an equal-sized price move', () => {
-  const gain = ownershipOutcome('gain');
-  const loss = ownershipOutcome('loss');
+test('ownership example always illustrates a price decline', () => {
   assert.equal(ownershipScenario.purchasePrice, 225);
-  assert.equal(gain.price, 240);
-  assert.equal(loss.price, 210);
-  assert.equal(gain.change, 15);
-  assert.equal(loss.change, -15);
-  assert.equal(gain.explanation, loss.explanation);
+  assert.equal(ownershipScenario.lossPrice, 210);
 });
 
 test('calculation questions use correct exposure and compounded fee values', () => {

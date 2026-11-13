@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ComponentRef } from 'react';
 import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -6,8 +6,8 @@ import * as Haptics from 'expo-haptics';
 import { pageEnter, reveal } from '../components/motion';
 import { BackButton, Button, Footer, Options, ProgressBar } from '../components/UI';
 import LessonIllustration from '../components/LessonIllustration';
-import { lessons, ownershipOutcome, ownershipScenario } from '../content';
-import type { LessonDraft, LessonId, LessonResult, Variant } from '../domain';
+import { lessons, ownershipScenario } from '../content';
+import type { LessonDraft, LessonId, LessonResult } from '../domain';
 import { styles } from '../styles';
 
 const localDate = (date = new Date()) =>
@@ -21,7 +21,6 @@ const confidenceOptions = [
 ];
 export default function LearningScreen({
   lessonId,
-  variant,
   busy,
   onComplete,
   onExit,
@@ -32,7 +31,6 @@ export default function LearningScreen({
   onFeedbackShown,
 }: {
   lessonId: LessonId;
-  variant: Variant;
   busy: boolean;
   onComplete: (result: LessonResult) => void;
   onExit: () => void;
@@ -98,18 +96,6 @@ export default function LearningScreen({
             : null;
   const feedbackStep = step >= 1 && step <= 7;
   const correct = question && selected === question.answer;
-  const outcome = ownershipOutcome(variant);
-  const outcomeShown = useRef(false);
-  useEffect(() => {
-    if (lessonId !== 'ownership' || step !== 4 || !submitted || outcomeShown.current) return;
-    outcomeShown.current = true;
-    onEvent('ownership_outcome_shown', {
-      experiment: 'ownership-price-direction-v1',
-      variant,
-      purchasePrice: ownershipScenario.purchasePrice,
-      outcomePrice: outcome.price,
-    });
-  }, [lessonId, step, submitted, variant, outcome.price, onEvent]);
   function moveTo(nextStep: number) {
     update({ step: nextStep });
     started.current = Date.now();
@@ -287,17 +273,15 @@ export default function LearningScreen({
                   <View style={styles.priceChange}>
                     <Text style={styles.previousPrice}>${ownershipScenario.purchasePrice}</Text>
                     <Text style={styles.heading}>→</Text>
-                    <Text style={styles.money}>${outcome.price}</Text>
+                    <Text style={styles.money}>${ownershipScenario.lossPrice}</Text>
                   </View>
-                  <Text
-                    style={[
-                      styles.heading,
-                      variant === 'gain' ? styles.correctText : styles.incorrectText,
-                    ]}
-                  >
-                    {variant === 'gain' ? '↑' : '↓'} ${Math.abs(outcome.change)} in share value
+                  <Text style={[styles.heading, styles.incorrectText]}>
+                    ↓ ${ownershipScenario.purchasePrice - ownershipScenario.lossPrice} in share
+                    value
                   </Text>
-                  <Text style={styles.body}>{outcome.explanation}</Text>
+                  <Text style={styles.body}>
+                    A one-day gain or loss does not tell you whether your reasoning was sound.
+                  </Text>
                 </View>
               )}
             </>

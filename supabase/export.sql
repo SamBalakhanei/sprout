@@ -31,3 +31,24 @@ where not exists (
   where excluded.session_id = t.session_id and excluded.event->>'type' = 'integration_test'
 )
 order by t.created_at, t.id;
+
+-- 4. Completed onboarding experiment runs. Keep the first run per participant
+-- during analysis; inspect step/selection events separately for incomplete runs.
+select e.session_id, e.event->'payload'->>'quizRunId' as quiz_run_id,
+  e.event->'payload'->>'group' as experiment_group,
+  e.event->'payload'->>'confidenceTiming' as confidence_timing,
+  e.event->'payload'->'first' as first_submission_scores,
+  e.event->'payload'->'final' as final_submission_scores,
+  e.event->'payload'->>'dontKnowSelections' as dont_know_selection_count,
+  e.event->'payload'->'firstConfidence' as first_confidence,
+  e.event->'payload'->'finalConfidence' as final_confidence,
+  e.event->'payload'->>'durationMs' as duration_ms
+from public.study_events e
+where e.event->>'type' = 'onboarding_summary'
+  and e.event->'payload'->>'experiment' = 'onboarding-confidence-order-v1'
+  and e.event->'payload'->>'appVersion' = 'sprint4.v6'
+  and not exists (
+    select 1 from public.study_events excluded
+    where excluded.session_id = e.session_id and excluded.event->>'type' = 'integration_test'
+  )
+order by e.created_at, e.event_id;

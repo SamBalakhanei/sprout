@@ -1,7 +1,7 @@
 import { lessons, onboardingQuestions } from './content';
 import type { Assessment, LearnerProgress, LessonDraft, LessonId, LessonResult } from './domain';
 
-export const contentVersion = 'sprint4.v5';
+export const contentVersion = 'sprint4.v6';
 
 export function lessonAvailable(progress: LearnerProgress, lessonId: LessonId) {
   return lessonId === 'ownership' || Boolean(progress.lessons.ownership);

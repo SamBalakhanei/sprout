@@ -17,6 +17,7 @@ import {
   startNewSession,
 } from '../services/backend';
 import { flushEvents, queueEvent } from '../services/events';
+import { onboardingExperiment, onboardingGroup } from '../onboarding';
 
 export function useStudy() {
   const [session, setSession] = useState<StudySession | null>(null);
@@ -103,8 +104,9 @@ export function useStudy() {
       return queueEvent(session.id, type, {
         ...payload,
         appVersion: contentVersion,
-        experiment: 'ownership-price-direction-v1',
-        variant: session.variant,
+        experiment: onboardingExperiment,
+        group: onboardingGroup(session.variant),
+        confidenceTiming: session.variant === 'gain' ? 'before_questions' : 'after_questions',
       }).catch(() => {
         setSyncMessage(
           'Study events could not be saved on this device. Please check available storage.',

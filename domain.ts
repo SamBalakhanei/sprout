@@ -1,6 +1,7 @@
 /** Shared contracts for the mobile UI, backend adapter, and study exports. */
 export type LessonId = 'ownership' | 'diversification';
 export type Topic = LessonId | 'risk' | 'funds' | 'time';
+/** Legacy database labels for the server-randomized bit; see onboardingGroup(). */
 export type Variant = 'gain' | 'loss';
 
 export type Question = {

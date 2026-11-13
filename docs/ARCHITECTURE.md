@@ -2,7 +2,7 @@
 
 ## Two separate kinds of trading
 
-The ownership lesson uses a $225 → $240 or $210 example to teach uncertainty. The server assigns each study session a gain/loss variant with equal probability; the lesson reads that persisted assignment without rerandomizing. The outcome card logs exposure, and all new events include the experiment ID and variant. Guided purchases independently use market quotes and record virtual transactions. `content.ts` does not determine the server's execution price.
+The ownership lesson always uses a $225 → $210 example to teach uncertainty. The active experiment is onboarding confidence order: the existing server-randomized session bit maps `gain` to A (confidence first) and `loss` to B (confidence last). `onboarding.ts` defines ordering and scoring; new events carry an explicit experiment ID, group, and confidence timing. These legacy database labels no longer determine a lesson price. Guided purchases independently use market quotes and record virtual transactions. `content.ts` does not determine the server's execution price.
 
 ```mermaid
 flowchart LR
@@ -51,7 +51,7 @@ Quote-source time and fetch time are distinct. A five-minute cache is not a clai
 
 ## Data collection
 
-Sessions hold baseline/progress/results and the assigned variant. Events hold question IDs, selected answers, phase, timing, navigation, confidence, and trade intent. Trades separately hold simulated fills. Events are queued before upload, and unique IDs make duplicate uploads safe. Client timing is approximate. Matched two-question knowledge summaries do not mix confidence into the score. Analyze `sprint4.v5` content and events separately from earlier versions; only new sessions with recorded exposure are eligible for the price-direction experiment.
+Sessions hold baseline/progress/results and the assigned random bit. Events hold question IDs, selected answers, phase, timing, navigation, confidence, and trade intent. Onboarding adds run IDs, step order, pre-submit selection changes, unknown flags, and first/final summary scores. Quiz state is held in memory until completion; reloads start a new run under the same group. Trades separately hold simulated fills. Events are queued before upload, and unique IDs make duplicate uploads safe. Client timing is approximate. Matched two-question knowledge summaries do not mix confidence into the score. Analyze `sprint4.v6` separately from earlier experiments and retain the first run per participant, flagging restarts and incomplete runs.
 
 The in-app CSV contains the current anonymous account's sessions. An administrator can use `supabase/export.sql` for team-wide data without granting learners broader access. Integration-test sessions are excluded by an explicit event marker. No study conclusions are inferred from integration tests.
 
@@ -59,7 +59,7 @@ The in-app CSV contains the current anonymous account's sessions. An administrat
 
 1. Show baseline neutrality and the sequential lesson path. Onboarding offers “I don’t know yet”; lesson questions do not.
 2. Tap bakery shares or switch diversification baskets; submit one incorrect answer and inspect explicit feedback.
-3. Show the assigned $225 → $240 or $210 lesson example and record exposure.
+3. Show the fixed $225 → $210 lesson example. Compare onboarding group/order/unknown-count events in the export.
 4. Complete the lesson; inspect its first-attempt result and once-only reward.
 5. Open guided practice, inspect quote/source/time, submit reasoning with Buy, and inspect the persisted purchase.
 6. Exit and reload a partial lesson to demonstrate resume; inspect the read-only portfolio from Home. Show raw CSV fields, not invented participant findings.

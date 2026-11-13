@@ -2,7 +2,15 @@
 
 These are implementation checks, not participant-study findings.
 
-- Expo TypeScript validation and 16 unit/content tests cover baseline breadth and difficulty order, exposure and fee arithmetic, answer integrity, explanations, both equal-sized ownership experiment outcomes, sector eligibility, saved drafts, server-completion recovery, first attempts, lesson checkpoints, matched score separation, calendar streaks, and CSV escaping.
+## Onboarding confidence-order revision
+
+- Both arms completed in an isolated browser fixture using the actual Assessment component. Animation and native crypto dependencies were substituted; no Supabase writes occurred. A showed confidence first; B showed ten questions before confidence. Both completion callbacks contained ten answers and both confidence ratings.
+- A selection/revision walkthrough recorded 10 first-submission unknown answers, 9 final unknown answers, and 11 raw unknown selections. This verified that Back revisions preserve the original answer and that unsubmitted changes remain distinct from submitted answers.
+- TypeScript, 18 tests, and the Expo web export passed. This fixture does not verify physical-device behavior or a new hosted event upload; it uses the existing event queue/upload path. No database migration is required.
+
+## Existing checks
+
+- Expo TypeScript validation and 18 unit/content tests cover baseline breadth and difficulty order, exposure and fee arithmetic, answer integrity, explanations, the fixed ownership loss, both onboarding confidence-order schedules, unique unknown-answer scoring, sector eligibility, saved drafts, server-completion recovery, first attempts, lesson checkpoints, matched score separation, calendar streaks, and CSV escaping.
 - The hosted Supabase migration was applied through its browser SQL editor. The rollback-only SQL checks completed without errors, including once-only rewards, malformed result rejection, duplicate orders, insufficient balance, and user isolation.
 - The opt-in hosted integration check successfully created an anonymous session, stored an event, retrieved real quotes for AAPL/MSFT/KO/JPM/WMT, bought and sold a virtual share, retried an order without duplicating it, rejected insufficient funds, and verified a second anonymous account could not read the first account's session.
 - Yahoo quote requests were blocked from one development egress but succeeded from the deployed Edge Function. Nasdaq fallback returned valid prices/timestamps during a separate development check. Source timestamps and possible delay are shown in the app.

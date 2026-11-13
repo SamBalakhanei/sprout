@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { pageEnter } from '../components/motion';
 import { BackButton, Button, Footer, Options, ProgressBar } from '../components/UI';
-import { onboardingQuestions } from '../content';
-import type { Assessment, LessonId } from '../domain';
+import { onboardingGroup, onboardingScores, onboardingSteps } from '../onboarding';
+import type { Assessment, LessonId, Variant } from '../domain';
 import { styles } from '../styles';
 
 const scale = [
@@ -19,21 +20,45 @@ export default function AssessmentScreen({
   busy,
   onEvent,
   onStepChange,
+  variant,
 }: {
   onComplete: (result: Assessment) => void;
   busy: boolean;
   onEvent: (type: string, payload: Record<string, unknown>) => void;
   onStepChange: () => void;
+  variant: Variant;
 }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [confidence, setConfidence] = useState<Partial<Record<LessonId, number>>>({});
   const [selections, setSelections] = useState<Record<number, number>>({});
   const started = useRef(Date.now());
-  const question = onboardingQuestions[step];
-  const topic: LessonId = step === onboardingQuestions.length ? 'ownership' : 'diversification';
-  const total = onboardingQuestions.length + 2;
+  const [quizRunId] = useState(() => Crypto.randomUUID());
+  const runStarted = useRef(Date.now());
+  const firstAnswers = useRef<Record<string, number>>({});
+  const firstConfidence = useRef<Partial<Record<LessonId, number>>>({});
+  const dontKnowSelections = useRef(0);
+  const steps = onboardingSteps(variant);
+  const current = steps[step];
+  const question = current.kind === 'question' ? current.question : null;
+  const topic = current.kind === 'confidence' ? current.topic : null;
+  const total = steps.length;
   const selected = selections[step] ?? null;
+  const event = (type: string, payload: Record<string, unknown>) =>
+    onEvent(type, { ...payload, quizRunId });
+  const lastViewed = useRef(-1);
+  useEffect(() => {
+    if (lastViewed.current === step) return;
+    lastViewed.current = step;
+    event('onboarding_step_viewed', {
+      step,
+      kind: current.kind,
+      questionId: question?.id,
+      topic,
+      questionsAnswered: Object.keys(firstAnswers.current).length,
+      group: onboardingGroup(variant),
+    });
+  });
   function moveTo(nextStep: number) {
     setStep(nextStep);
     started.current = Date.now();
@@ -41,43 +66,66 @@ export default function AssessmentScreen({
   }
   function next() {
     if (selected === null || busy) return;
+    const nextAnswers = { ...answers };
+    const nextConfidence = { ...confidence };
     if (question) {
       const previousSelected = answers[question.id];
       // Preserve the first response event; revisits record only actual changes.
       if (previousSelected === undefined) {
-        onEvent('question_answered', {
+        firstAnswers.current[question.id] = selected;
+        event('question_answered', {
           questionId: question.id,
           selected,
           correct: selected === question.answer,
+          dontKnow: selected === question.options.length - 1,
           responseMs: Date.now() - started.current,
           phase: 'onboarding',
         });
       } else if (previousSelected !== selected) {
-        onEvent('answer_revised', {
+        event('answer_revised', {
           questionId: question.id,
           previousSelected,
           selected,
+          dontKnow: selected === question.options.length - 1,
+          correct: selected === question.answer,
+          responseMs: Date.now() - started.current,
           phase: 'onboarding',
         });
       }
-      setAnswers({ ...answers, [question.id]: selected });
-    } else {
+      nextAnswers[question.id] = selected;
+      setAnswers(nextAnswers);
+    } else if (topic) {
       const previous = confidence[topic];
-      if (previous === undefined)
-        onEvent('confidence_rated', { topic, confidence: selected + 1, phase: 'before' });
-      else if (previous !== selected + 1)
-        onEvent('answer_revised', {
+      if (previous === undefined) {
+        firstConfidence.current[topic] = selected + 1;
+        event('confidence_rated', {
+          topic,
+          confidence: selected + 1,
+          phase: 'before',
+          questionsAnswered: Object.keys(firstAnswers.current).length,
+        });
+      } else if (previous !== selected + 1)
+        event('answer_revised', {
           topic,
           previousSelected: previous - 1,
           selected,
           phase: 'before',
+          questionsAnswered: Object.keys(firstAnswers.current).length,
         });
-      const nextConfidence = { ...confidence, [topic]: selected + 1 };
+      nextConfidence[topic] = selected + 1;
       setConfidence(nextConfidence);
-      if (step === total - 1) {
-        onComplete({ answers, confidence: nextConfidence as Record<LessonId, number> });
-        return;
-      }
+    }
+    if (step === total - 1) {
+      event('onboarding_summary', {
+        first: onboardingScores(firstAnswers.current),
+        final: onboardingScores(nextAnswers),
+        dontKnowSelections: dontKnowSelections.current,
+        firstConfidence: firstConfidence.current,
+        finalConfidence: nextConfidence,
+        durationMs: Date.now() - runStarted.current,
+      });
+      onComplete({ answers: nextAnswers, confidence: nextConfidence as Record<LessonId, number> });
+      return;
     }
     moveTo(step + 1);
   }
@@ -99,7 +147,21 @@ export default function AssessmentScreen({
         <Options
           options={question ? question.options : scale}
           selected={selected}
-          onSelect={(value) => setSelections({ ...selections, [step]: value })}
+          onSelect={(value) => {
+            if (value === selected) return;
+            if (question) {
+              const dontKnow = value === question.options.length - 1;
+              if (dontKnow) dontKnowSelections.current += 1;
+              event('onboarding_answer_selected', {
+                questionId: question.id,
+                selected: value,
+                previousSelected: selected,
+                dontKnow,
+                elapsedMs: Date.now() - started.current,
+              });
+            }
+            setSelections({ ...selections, [step]: value });
+          }}
           disabled={busy}
         />
       </Animated.View>

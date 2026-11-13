@@ -1,4 +1,4 @@
-import type { Assessment, LessonId, Question, Topic, Variant } from './domain';
+import type { Assessment, LessonId, Question, Topic } from './domain';
 const q = (
   id: string,
   topic: Topic,
@@ -334,15 +334,6 @@ export function recommendedLesson(assessment: Assessment): LessonId {
     ? 'ownership'
     : 'diversification';
 }
-export const ownershipScenario = { purchasePrice: 225, gainPrice: 240, lossPrice: 210 } as const;
-/** Only the price direction changes between arms; learning feedback stays identical. */
-export function ownershipOutcome(variant: Variant) {
-  const price = variant === 'gain' ? ownershipScenario.gainPrice : ownershipScenario.lossPrice;
-  return {
-    price,
-    change: price - ownershipScenario.purchasePrice,
-    explanation: 'A one-day gain or loss does not tell you whether your reasoning was sound.',
-  };
-}
+export const ownershipScenario = { purchasePrice: 225, lossPrice: 210 } as const;
 export const lessonReward = 1000;
 export const lessonXP = 120;

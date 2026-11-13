@@ -20,13 +20,13 @@ Scan Expo's QR code with a physical phone on the same network. For browser testi
 - Ten progressively harder baseline questions across five topics, including concrete calculations, plus separate ownership/diversification confidence ratings. Onboarding gives no correctness feedback; Back allows answers and confidence ratings to be edited.
 - A home screen with two sequential lessons, XP, level, and a simple learning streak. Complete ownership (Lesson 1) to unlock diversification (Lesson 2).
 - Interactive examples, three comprehension checks per lesson, a reasoning scenario, a transfer question, two post questions, and confidence measurement. Each lesson question gives feedback after its first submitted answer.
-- An A/B ownership scenario: $225 → $240 or $210, using the session's saved 50/50 server assignment. Exposure and later trading events carry the variant; see [the study guide](docs/STUDY.md) for analysis.
+- An onboarding A/B test: Group A rates confidence before the quiz; Group B afterward. First/final unknown answers, raw unknown selections, accuracy, confidence, and order events support analysis. The ownership example always falls from $225 to $210. See [the study guide](docs/STUDY.md).
 - One guided whole-share purchase per lesson, virtual cash, holdings, valuations, order receipts, and a read-only portfolio from Home. There is no free trading or selling.
 - Hosted anonymous sessions, first-attempt results, study events, raw CSV export, and local recovery of progress/events/pending orders.
 
 A new study session starts with $1,000 virtual cash. Each completed lesson awards another $1,000 once and earns 120 learning XP. Completing both lessons reaches Level 2. Reviews do not award money again or overwrite the original completed result.
 
-During a lesson, Back permits review while preserving first submitted answers; confidence remains editable. A saved lesson draft resumes after exit or reload. The “I don’t know yet” option is available in onboarding, but not lesson questions. Lesson 1 has a guided purchase checkpoint and a button to continue to the next lesson. Lesson 2 requires a company in a sector outside all current holdings. Reasoning attempts are recorded and feedback shown when Buy is pressed; a correct reason is required to purchase. New assessments and lesson results carry `contentVersion: sprint4.v5`; event payloads use `appVersion: sprint4.v5`. Analyze earlier versions separately from v5.
+During a lesson, Back permits review while preserving first submitted answers; confidence remains editable. A saved lesson draft resumes after exit or reload. The “I don’t know yet” option is available in onboarding, but not lesson questions. Lesson 1 has a guided purchase checkpoint and a button to continue to the next lesson. Lesson 2 requires a company in a sector outside all current holdings. Reasoning attempts are recorded and feedback shown when Buy is pressed; a correct reason is required to purchase. New assessments and lesson results carry `contentVersion: sprint4.v6`; event payloads use `appVersion: sprint4.v6`. Analyze earlier versions separately from v6.
 
 ## Real versus illustrative
 
