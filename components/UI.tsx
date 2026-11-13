@@ -2,6 +2,27 @@ import { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { styles } from '../styles';
 
+export function BackButton({
+  onPress,
+  disabled = false,
+}: {
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Back"
+      disabled={disabled}
+      accessibilityState={{ disabled }}
+      onPress={onPress}
+      style={styles.backButton}
+    >
+      <Text style={styles.backArrow}>←</Text>
+    </Pressable>
+  );
+}
+
 export function Button({
   title,
   onPress,

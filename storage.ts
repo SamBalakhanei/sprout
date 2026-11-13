@@ -1,18 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { initialProgress, isProgress, Progress } from './progress';
+import type { LearnerProgress, StudySession } from './domain';
+import { isProgress } from './progress';
 
-const key = 'sprout.progress.v1';
+const key = 'sprout.progress.v2';
+export type CachedStudy = { session: StudySession; progress: LearnerProgress; pending?: boolean };
 
-// Keep persistence here so screens do not depend on a storage provider.
 export const progressStorage = {
-  async load(): Promise<Progress> {
+  async load(): Promise<CachedStudy | null> {
     const saved = await AsyncStorage.getItem(key);
-    if (!saved) return { ...initialProgress };
+    if (!saved) return null;
     const parsed: unknown = JSON.parse(saved);
-    if (!isProgress(parsed)) throw new Error('Saved progress is not valid.');
-    return parsed;
+    const item = parsed as CachedStudy;
+    if (
+      !item?.session?.id ||
+      !['gain', 'loss'].includes(item.session.variant) ||
+      !isProgress(item.progress)
+    ) {
+      throw new Error('Saved progress is not valid. Reconnect to restore it.');
+    }
+    return item;
   },
-  async save(progress: Progress) {
-    await AsyncStorage.setItem(key, JSON.stringify(progress));
+  async save(session: StudySession, progress: LearnerProgress, pending = false) {
+    await AsyncStorage.setItem(key, JSON.stringify({ session, progress, pending }));
   },
 };

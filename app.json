@@ -9,8 +9,6 @@
     "ios": {
       "supportsTablet": true
     },
-    "plugins": [
-      "expo-status-bar"
-    ]
+    "plugins": ["expo-status-bar", "expo-sharing"]
   }
 }

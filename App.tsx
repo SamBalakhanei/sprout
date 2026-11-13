@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ComponentRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,22 +11,22 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
-import {
-  GestureDetector,
-  GestureHandlerRootView,
-  usePanGesture,
-} from 'react-native-gesture-handler';
-import { celebrate, noticeEnter, noticeExit, pageEnter } from './components/motion';
+import { StatusBar } from 'expo-status-bar';
 import { Button, Footer } from './components/UI';
-import { lessonReward, lessonXP, placementQuestions, reflectionQuestions } from './content';
-import { initialProgress, localDate, Progress, score, streak } from './progress';
-import Assessment from './screens/Assessment';
-import { Lesson, LessonCheck } from './screens/Lesson';
-import { money, Practice, TradeResult } from './screens/Practice';
-import { progressStorage } from './storage';
+import { pageEnter } from './components/motion';
+import NotificationBanner from './components/NotificationBanner';
+import AssessmentScreen from './screens/Assessment';
+import HomeScreen from './screens/HomeScreen';
+import LearningScreen from './screens/LearningScreen';
+import { MarketScreen } from './screens/MarketScreen';
+import PortfolioScreen from './screens/PortfolioScreen';
+import { contentVersion, lessonAvailable } from './progress';
+import type { LessonId, LessonResult } from './domain';
+import { useStudy } from './hooks/useStudy';
+import { shareStudyData } from './services/export';
 import { colors, styles } from './styles';
 
 export default function App() {
@@ -46,133 +47,121 @@ export default function App() {
 }
 
 function Sprout() {
-  const insets = useSafeAreaInsets();
-  const [progress, setProgress] = useState<Progress>(initialProgress);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [showLessonNotice, setShowLessonNotice] = useState(false);
-  const saving = useRef(false);
+  const study = useStudy();
+  const { session, progress, loading, busy, error, syncMessage } = study;
+  const [notice, setNotice] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const scroll = useRef<ScrollViewInstance>(null);
-  const dismissNotice = usePanGesture({
-    activeOffsetY: -8,
-    failOffsetX: [-30, 30],
-    runOnJS: true,
-    onDeactivate: (event) => {
-      if (!event.canceled && (event.translationY < -24 || event.velocityY < -300)) {
-        setShowLessonNotice(false);
-      }
-    },
-  });
+  const scrollContent = useRef<ComponentRef<typeof View>>(null);
+  const enteredAt = useRef(Date.now());
 
-  async function load() {
-    setLoading(true);
-    setLoadError(false);
-    try {
-      setProgress(await progressStorage.load());
-    } catch {
-      setLoadError(true);
-    } finally {
-      setLoading(false);
-    }
+  function showFeedback(target: ComponentRef<typeof View> | null) {
+    if (!target || !scrollContent.current) return;
+    target.measureLayout(
+      scrollContent.current,
+      (_x, y) => {
+        scroll.current?.scrollTo({ y: Math.max(0, y - 16), animated: false });
+      },
+      () => {},
+    );
   }
 
   useEffect(() => {
-    void load();
-  }, []);
-  useEffect(() => {
-    setShowLessonNotice(false);
+    enteredAt.current = Date.now();
     scroll.current?.scrollTo({ y: 0, animated: false });
-  }, [progress.stage]);
+    study.event('screen_entered', { screen: progress.screen, lessonId: progress.activeLesson });
+    return () => {
+      study.event('screen_exited', {
+        screen: progress.screen,
+        durationMs: Date.now() - enteredAt.current,
+      });
+    };
+  }, [progress.screen, progress.activeLesson, study.event]);
 
   useEffect(() => {
-    if (!showLessonNotice) return;
-    const timer = setTimeout(() => setShowLessonNotice(false), 4500);
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 4500);
     return () => clearTimeout(timer);
-  }, [showLessonNotice]);
-
-  async function update(changes: Partial<Progress>) {
-    if (saving.current) return;
-    saving.current = true;
-    setBusy(true);
-    const next = { ...progress, ...changes };
-    try {
-      await progressStorage.save(next);
-      setProgress(next);
-      setLoadError(false);
-    } catch {
-      Alert.alert('Couldn’t save progress', 'Your progress has not changed. Please try again.');
-    } finally {
-      saving.current = false;
-      setBusy(false);
-    }
-  }
+  }, [notice]);
 
   function reset() {
-    // React Native Web does not implement Alert.alert.
+    const message =
+      'Start a new learning session? Previous study records are preserved, and your practice portfolio starts fresh.';
     if (Platform.OS === 'web') {
-      if (window.confirm('Reset your quiz answers, lesson progress, and practice trade?')) {
-        void update(initialProgress);
-      }
-      return;
-    }
-    Alert.alert(
-      'Start fresh?',
-      'This clears your quiz answers, lesson progress, and practice trade on this device.',
-      [
+      if (window.confirm(message)) void study.reset();
+    } else
+      Alert.alert('Start fresh?', message, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Reset progress',
           style: 'destructive',
           onPress: () => {
-            void update(initialProgress);
+            void study.reset();
           },
         },
-      ],
-    );
+      ]);
+  }
+
+  function learn(id: LessonId) {
+    if (!lessonAvailable(progress, id)) {
+      setNotice('Complete lesson 1 to unlock lesson 2.');
+      return;
+    }
+    study.event('lesson_started', { lessonId: id, review: Boolean(progress.lessons[id]) });
+    void study.save({ screen: 'learn', activeLesson: id });
+  }
+
+  function finish(id: LessonId, result: LessonResult) {
+    if (progress.lessons[id]) {
+      const lessonDrafts = { ...progress.lessonDrafts };
+      delete lessonDrafts[id];
+      study.event('lesson_review_completed', { lessonId: id });
+      void study.save({ screen: 'market', activeLesson: id, practiceLesson: id, lessonDrafts });
+    } else void study.finish(id, { ...result, contentVersion });
+  }
+
+  async function exportData() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      if (!(await study.sync()))
+        throw new Error('Reconnect to sync all responses before exporting.');
+      await shareStudyData();
+      setNotice('Study data exported.');
+    } catch (cause) {
+      setNotice(
+        cause instanceof Error ? cause.message : 'Export needs a connection. Please try again.',
+      );
+    } finally {
+      setExporting(false);
+    }
   }
 
   if (loading)
     return (
       <SafeAreaView style={styles.centered}>
+        <StatusBar style="dark" />
         <ActivityIndicator color={colors.green} />
-        <Text style={styles.body}>Getting your garden ready…</Text>
+        <Text style={styles.body}>Opening your learning space…</Text>
       </SafeAreaView>
     );
-  if (loadError)
+  if (!session)
     return (
-      <SafeAreaView style={styles.centered}>
-        <Text style={styles.heading}>We couldn’t open your saved progress.</Text>
-        <Text style={styles.body}>Try again, or reset your progress to start fresh.</Text>
+      <SafeAreaView style={[styles.root, styles.centered]}>
+        <Text style={styles.brand}>♧ sprout</Text>
+        <Text style={styles.heading}>Let’s get connected.</Text>
+        {Boolean(error) && <Text style={styles.small}>{error}</Text>}
         <Button
           title="Try again"
           onPress={() => {
-            void load();
+            void study.load();
           }}
         />
-        <Button title="Reset progress" onPress={reset} disabled={busy} />
       </SafeAreaView>
     );
 
-  const beforeScore = progress.before
-    ? score(
-        progress.before.answers,
-        placementQuestions.map((question) => question.answer),
-      )
-    : 0;
-  const afterScore = progress.after
-    ? score(
-        progress.after.answers,
-        reflectionQuestions.map((question) => question.answer),
-      )
-    : 0;
-  const dayStreak = streak(progress.completedOn);
-  const advance = (stage: Progress['stage']) => {
-    void update({ stage });
-  };
-
-  function renderScreen() {
-    switch (progress.stage) {
+  function screen() {
+    switch (progress.screen) {
       case 'welcome':
         return (
           <>
@@ -182,190 +171,109 @@ function Sprout() {
             </View>
             <Text style={styles.title}>Grow your investing knowledge.</Text>
             <Text style={styles.body}>
-              Learn one small idea. Put it into practice. Build a little confidence along the way.
+              Learn investing. Practice with virtual money and real market prices.
             </Text>
             <View style={styles.card}>
-              <Text style={styles.heading}>Your first five minutes</Text>
-              <Text style={styles.body}>01 Find your starting point</Text>
-              <Text style={styles.body}>02 Learn what a stock is</Text>
-              <Text style={styles.body}>03 Make a practice trade</Text>
+              <Text style={styles.heading}>Learn → Apply → Reflect</Text>
+              <Text style={styles.small}>
+                Your answers and practice activity are saved under an anonymous study code.
+              </Text>
             </View>
             <Footer>
-              <Button title="Let’s grow" onPress={() => advance('onboarding')} disabled={busy} />
-              <Text style={styles.small}>
-                Education + simulation only. No real money. No investment advice or promised
-                returns.
-              </Text>
+              <Button
+                title="Begin Onboarding Quiz"
+                onPress={() => {
+                  study.event('study_started');
+                  void study.save({ screen: 'onboarding' });
+                }}
+                disabled={busy}
+              />
+              <Text style={styles.small}>Virtual money only. No real-money trades.</Text>
             </Footer>
           </>
         );
       case 'onboarding':
         return (
-          <Assessment
+          <AssessmentScreen
+            onStepChange={() => scroll.current?.scrollTo({ y: 0, animated: false })}
             busy={busy}
-            onComplete={(before) => {
-              void update({ before, stage: 'placement' });
+            onEvent={study.event}
+            onComplete={(assessment) => {
+              const baseline = { ...assessment, contentVersion };
+              study.event('onboarding_completed', { assessment: baseline });
+              void study.save({
+                assessment: baseline,
+                activeLesson: 'ownership',
+                screen: 'home',
+              });
             }}
           />
         );
-      case 'placement':
+      case 'home':
         return (
-          <>
-            <Text style={styles.eyebrow}>Your path / Beginner foundations</Text>
-            <Text style={styles.title}>Your first little step.</Text>
-            <Text style={styles.body}>
-              {beforeScore === 0
-                ? 'Let’s start with the basics. No experience needed.'
-                : beforeScore === 1
-                  ? 'You have a seed of knowledge. Let’s build a clearer picture.'
-                  : 'You know the basics already. This short refresher will help you put them into practice.'}
-            </Text>
-            <View style={styles.softCard}>
-              <Text style={styles.heading}>{beforeScore}/2 starting questions correct</Text>
-              <Text style={styles.body}>
-                Your starting confidence: {progress.before?.confidence}/5
-              </Text>
-              <Text style={styles.small}>
-                Start with stock ownership, then put what you learn into practice.
-              </Text>
-            </View>
-            <View style={styles.card}>
-              <Text style={styles.badge}>01 · Ready to grow</Text>
-              <Text style={styles.heading}>What is a stock?</Text>
-              <Text style={styles.body}>
-                A little bakery, a small ownership stake, and your first practice trade.
-              </Text>
-              <Text style={styles.small}>About 3 minutes · Earn $1,000 virtual + 120 XP</Text>
-            </View>
-            <Footer>
-              <Button title="Start lesson 1" onPress={() => advance('lesson')} disabled={busy} />
-            </Footer>
-          </>
-        );
-      case 'lesson':
-        return <Lesson busy={busy} onComplete={() => advance('check')} />;
-      case 'check':
-        return (
-          <LessonCheck
-            busy={busy}
-            onFeedbackShown={() => scroll.current?.scrollToEnd({ animated: false })}
-            onComplete={(checkAnswer) => {
-              void update({ checkAnswer, completedOn: localDate(), stage: 'reward' });
+          <HomeScreen
+            sessionId={session!.id}
+            progress={progress}
+            busy={busy || exporting}
+            onLearn={learn}
+            onPortfolio={() => {
+              void study.save({ screen: 'portfolio', practiceLesson: null });
+            }}
+            onExport={() => {
+              void exportData();
             }}
           />
         );
-      case 'reward':
+      case 'learn':
         return (
-          <>
-            <Text style={styles.badge}>✓ Lesson complete</Text>
-            <View style={styles.hero}>
-              <Animated.View entering={celebrate}>
-                <Text style={styles.plant}>🌻</Text>
-              </Animated.View>
-            </View>
-            <Text style={styles.title}>You learned it. Now try it.</Text>
-            <Text style={styles.body}>
-              A share means ownership. Use your reward to buy one share—and explain your reason.
-            </Text>
-            <View style={styles.greenCard}>
-              <Text style={[styles.eyebrow, styles.white]}>Play money earned</Text>
-              <Text style={[styles.money, styles.white]}>+{money(lessonReward)}</Text>
-              <Text style={[styles.small, styles.white]}>
-                Virtual cash only. Cannot be withdrawn or cashed out.
-              </Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.badge}>⚡ +{lessonXP} XP</Text>
-              <Text style={styles.badge}>🔥 {dayStreak}-day streak</Text>
-            </View>
-            <Footer>
-              <Button title="Next: buy a share" onPress={() => advance('trade')} disabled={busy} />
-            </Footer>
-          </>
-        );
-      case 'trade':
-        return (
-          <Practice
+          <LearningScreen
+            onFeedbackShown={showFeedback}
+            onStepChange={() => scroll.current?.scrollTo({ y: 0, animated: false })}
+            key={`${session!.id}-${progress.activeLesson}`}
+            draft={progress.lessonDrafts?.[progress.activeLesson]}
+            onDraftChange={(draft) => study.saveDraft(progress.activeLesson, draft)}
+            lessonId={progress.activeLesson}
             busy={busy}
-            onBuy={(tradeReason) => {
-              void update({ tradeReason, stage: 'result' });
+            onComplete={(result) => finish(progress.activeLesson, result)}
+            onExit={() => {
+              void study.save({ screen: 'home' });
+            }}
+            onEvent={(type, payload) =>
+              study.event(type, {
+                ...payload,
+                lessonId: progress.activeLesson,
+                review: Boolean(progress.lessons[progress.activeLesson]),
+              })
+            }
+          />
+        );
+      case 'market':
+        if (!progress.practiceLesson) return null;
+        return (
+          <MarketScreen
+            key={`${session!.id}-${progress.practiceLesson || 'practice'}`}
+            sessionId={session!.id}
+            lessonId={progress.practiceLesson}
+            onNextLesson={() => learn('diversification')}
+            onPreviousLesson={() => learn('ownership')}
+            onViewPortfolio={() => {
+              void study.save({ screen: 'portfolio', practiceLesson: null });
+            }}
+            onBack={() => {
+              void study.save({ screen: 'home', practiceLesson: null });
+            }}
+            onEvent={study.event}
+            onReceiptShown={showFeedback}
+          />
+        );
+      case 'portfolio':
+        return (
+          <PortfolioScreen
+            sessionId={session!.id}
+            onBack={() => {
+              void study.save({ screen: 'home' });
             }}
           />
-        );
-      case 'result':
-        return (
-          <TradeResult
-            busy={busy}
-            reason={progress.tradeReason!}
-            onOutcomeShown={() => scroll.current?.scrollTo({ y: 0, animated: false })}
-            onComplete={() => advance(progress.after ? 'done' : 'reflection')}
-          />
-        );
-      case 'reflection':
-        return (
-          <Assessment
-            after
-            busy={busy}
-            onComplete={(after) => {
-              void update({ after, stage: 'done' });
-            }}
-          />
-        );
-      case 'done':
-        return (
-          <>
-            <Text style={styles.eyebrow}>First chapter / Complete</Text>
-            <Text style={styles.title}>Little steps add up.</Text>
-            <View style={styles.goldCard}>
-              <Text style={styles.heading}>🌱 You learned, then practiced.</Text>
-              <Text style={styles.body}>
-                A share means ownership. Its price can rise or fall. You tried that idea with play
-                money.
-              </Text>
-            </View>
-            <View style={styles.card}>
-              <Text style={styles.heading}>Your learning snapshot</Text>
-              <Text style={styles.body}>
-                Knowledge: {beforeScore}/2 before → {afterScore}/2 after
-              </Text>
-              <Text style={styles.body}>
-                Confidence: {progress.before?.confidence}/5 before → {progress.after?.confidence}/5
-                after
-              </Text>
-              <Text style={styles.small}>
-                Every new idea is a step toward feeling more confident.
-              </Text>
-            </View>
-            {afterScore < 2 && (
-              <View style={styles.softCard}>
-                <Text style={styles.heading}>A reminder to take with you</Text>
-                <Text style={styles.body}>
-                  A share is a small ownership stake in a company. The price can go down, so profit
-                  is never guaranteed.
-                </Text>
-              </View>
-            )}
-            <View style={styles.row}>
-              <Text style={styles.badge}>⚡ {lessonXP} XP</Text>
-              <Text style={styles.badge}>🔥 {dayStreak}-day streak</Text>
-              <Text style={styles.badge}>1/1 lessons</Text>
-            </View>
-            <Text style={styles.body}>
-              {dayStreak
-                ? 'Your learning streak has started. XP comes from learning, never trading profit.'
-                : 'Your lesson is saved. Your streak is currently 0 days.'}
-            </Text>
-            <Footer>
-              <Text style={styles.small}>
-                Your first chapter is complete. Take a moment to see how far you’ve grown.
-              </Text>
-              <Button
-                title="Continue to lesson 2"
-                onPress={() => setShowLessonNotice(true)}
-                disabled={busy}
-              />
-            </Footer>
-          </>
         );
     }
   }
@@ -373,49 +281,57 @@ function Sprout() {
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="dark" />
-      <ScrollView ref={scroll} contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.brand}>♧ sprout</Text>
-          <Pressable accessibilityRole="button" disabled={busy} onPress={reset} hitSlop={8}>
-            <Text style={styles.link}>Reset prototype</Text>
-          </Pressable>
-        </View>
-        <Animated.View key={progress.stage} entering={pageEnter} style={styles.screen}>
-          {renderScreen()}
-        </Animated.View>
-        {busy && (
-          <Text accessibilityLiveRegion="polite" style={styles.small}>
-            Saving your progress…
-          </Text>
-        )}
-      </ScrollView>
-      <View pointerEvents="box-none" style={[styles.noticeLayer, { top: insets.top + 8 }]}>
-        <GestureDetector gesture={dismissNotice} touchAction="none">
-          <View collapsable={false} style={styles.noticeSlot}>
-            {showLessonNotice && (
-              <Animated.View
-                entering={noticeEnter}
-                exiting={noticeExit}
-                style={styles.notice}
-                accessibilityLiveRegion="polite"
-                accessible
-                accessibilityRole="alert"
-                accessibilityHint="Swipe up to dismiss"
-                accessibilityActions={[{ name: 'dismiss', label: 'Dismiss notification' }]}
-                onAccessibilityAction={() => setShowLessonNotice(false)}
-                onAccessibilityEscape={() => setShowLessonNotice(false)}
-              >
-                <Text style={styles.noticeIcon}>🌱</Text>
-                <View style={styles.noticeContent}>
-                  <Text style={styles.eyebrow}>Sprout · Now</Text>
-                  <Text style={styles.noticeTitle}>More learning is on the way</Text>
-                  <Text style={styles.small}>Lesson 2 is not implemented yet. Stay tuned!</Text>
-                </View>
-              </Animated.View>
-            )}
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View ref={scrollContent} collapsable={false} style={styles.screen}>
+          <View style={styles.header}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sprout home"
+              disabled={busy || !progress.assessment}
+              onPress={() => {
+                void study.save({ screen: 'home', practiceLesson: null });
+              }}
+            >
+              <Text style={styles.brand}>♧ sprout</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" disabled={busy} onPress={reset} hitSlop={8}>
+              <Text style={styles.link}>Reset prototype</Text>
+            </Pressable>
           </View>
-        </GestureDetector>
-      </View>
+          {Boolean(syncMessage) && (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                void study.sync();
+              }}
+            >
+              <Text style={styles.small}>{syncMessage} Tap to retry.</Text>
+            </Pressable>
+          )}
+          {Boolean(error) && (
+            <View style={[styles.softCard, styles.incorrectCard]} accessibilityLiveRegion="polite">
+              <Text style={styles.body}>{error}</Text>
+            </View>
+          )}
+          <Animated.View
+            key={`${progress.screen}-${progress.activeLesson}`}
+            entering={pageEnter}
+            style={styles.screen}
+          >
+            {screen()}
+          </Animated.View>
+          {(busy || exporting) && (
+            <Text style={styles.small} accessibilityLiveRegion="polite">
+              {exporting ? 'Preparing your study export…' : 'Saving progress…'}
+            </Text>
+          )}
+        </View>
+      </ScrollView>
+      <NotificationBanner message={notice} onDismiss={() => setNotice(null)} />
     </SafeAreaView>
   );
 }

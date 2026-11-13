@@ -77,6 +77,14 @@ export const styles = StyleSheet.create({
   body: { fontSize: 16, lineHeight: 25, color: colors.muted },
   small: { fontSize: 12, lineHeight: 18, color: colors.muted },
   link: { fontSize: 13, color: colors.green, fontWeight: '600', paddingVertical: 12 },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrow: { fontSize: 28, color: colors.green },
   card: {
     padding: 20,
     borderRadius: 22,

@@ -1,0 +1,1 @@
+Company favicons retrieved from Google favicon service using the official domains apple.com, microsoft.com, coca-cola.com, jpmorganchase.com, and walmart.com. Company marks remain the property of their respective owners.
